@@ -15,7 +15,7 @@ Button2 button1, button2, button3, button4;
 #include <Wire.h>
 #include <Ticker.h>
 #include <WiFi.h>
-#include <ArduinoHttpClient.h>
+#include <HttpClient.h>
 
 const char apn[]      = "chili";
 const char gprsUser[] = "";
@@ -37,7 +37,7 @@ FRAM fram(&I2CFRAM);
 #define SerialAT Serial1
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
-HttpClient http(client, server, port);
+HTTPClient http;
 
 
 bool setPowerBoostKeepOn(int en){
@@ -100,12 +100,14 @@ void sendpulseString() {
     Serial.println("Failed to connect to GPRS network");
   }
   else {
-    String httpRequestData = "?HBBoxNumber=" + String(fram.read32(500)) + "&Channel=1";
-    http.get("/api/MachinePartOperations" + httpRequestData);
-    Serial.println("Status code: " + int(http.responseStatusCode()));
-    Serial.println("Response: " + String(http.responseBody()));
+    String serverPath = "https://oms.ventil.nl/api/MachinePartOperations?HBBoxNumber=" + String(fram.read32(500)) + "&Channel=1";
 
-    http.stop();
+    http.begin(serverPath.c_str());
+    http.GET();
+    if (http.getString() == "1") return;
+    else Serial.println(F("API request failed"));
+
+    http.end();
     Serial.println(F("Server disconnected"));
     modem.gprsDisconnect();
     Serial.println(F("GPRS disconnected"));
