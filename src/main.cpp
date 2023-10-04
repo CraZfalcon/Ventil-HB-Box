@@ -101,11 +101,14 @@ void sendpulseString() {
   }
   else {
     String serverPath = "https://oms.ventil.nl/api/MachinePartOperations?HBBoxNumber=" + String(fram.read32(500)) + "&Channel=1";
+    //https://oms.ventil.nl/api/MachinePartOperations?HBBoxNumber= + String(fram.read32(500)) + "&Channel1=" + String(fram.read32(10000)) + "&Channel2=" + String(fram.read32(11000)) + "&Channel3=" + String(fram.read32(12000)) + "&Channel4=" + String(fram.read32(13000));
+    // API adress will need to be changed. Current path is only for testing purposes.
 
     http.begin(serverPath.c_str());
     http.GET();
-    if (http.getString() == "1") return;
+    if (http.getString() == "1") Serial.println(F("API request success"));
     else Serial.println(F("API request failed"));
+    // option to add more actions by adding "if (http.getString() == "{responsecode}") {responsecode action}"
 
     http.end();
     Serial.println(F("Server disconnected"));
