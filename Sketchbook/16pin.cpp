@@ -18,12 +18,9 @@
 Button2 button1, button2, button3, button4, button5, button6, button7, button8, button9, button10, button11, button12, button13, button14, button15, button16;
 
 
-// Configure TinyGSM library
 #define TINY_GSM_MODEM_SIM7000
 #define TINY_GSM_RX_BUFFER 1024 // Set RX buffer to 1Kb
 #define GSM_PIN "0000"
-
-// Set serial for AT commands (to SIM7000 module)
 
 #include <TinyGsmClient.h>
 #include <FRAM.h>
@@ -31,22 +28,19 @@ Button2 button1, button2, button3, button4, button5, button6, button7, button8, 
 #include <Wire.h>
 #include <Ticker.h>
 #include <WiFi.h>
-#include <ArduinoHttpClient.h>
+#include <HTTPClient.h>
 
 const char apn[]      = "chili";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 const char simPIN[]   = "0000"; 
 
-const char server[]   = "https://oms.ventil.nl";
-const int  port       = 8081;
 const int  machinenr  = 1;
 
 static const unsigned long REFRESH_INTERVAL = 10000;
 static unsigned long lastRefreshTime = 0;
 
-// I2C for SIM7000G (to keep it running when powered from battery)
-// I2C for FRAM sensor
+// I2C for SIM7000G(0) & FRAM(1) (to keep it running when powered from battery)
 TwoWire I2CModem = TwoWire(0);
 TwoWire I2CFRAM = TwoWire(1);
 FRAM fram(&I2CFRAM);
@@ -54,7 +48,7 @@ FRAM fram(&I2CFRAM);
 #define SerialAT Serial1
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
-HttpClient http(client, server, port);
+HTTPClient http;
 
 
 bool setPowerBoostKeepOn(int en){
@@ -148,21 +142,22 @@ void setup() {
 }
 
 void sendpulseString() {
-  Serial.print("Connecting to APN: ");
-  Serial.println(apn);
+  Serial.println("Connecting to APN: " + String(apn));
   if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
     Serial.println("Failed to connect to GPRS network");
   }
   else {
-    String httpRequestData = "?HBBoxNumber=" + String(fram.read32(500)) + "&Channel1=" + String(fram.read32(10000)) + "&Channel2=" + String(fram.read32(11000)) + "&Channel3=" + String(fram.read32(12000)) + "&Channel4=" + String(fram.read32(13000)) + "&Channel5=" + String(fram.read32(14000)) + "&Channel6=" + String(fram.read32(15000)) + "&Channel7=" + String(fram.read32(16000)) + "&Channel8=" + String(fram.read32(17000)) + "&Channel9=" + String(fram.read32(18000)) + "&Channel10=" + String(fram.read32(19000)) + "&Channel11=" + String(fram.read32(20000)) + "&Channel12=" + String(fram.read32(21000)) + "&Channel13=" + String(fram.read32(22000)) + "&Channel14=" + String(fram.read32(23000)) + "&Channel15=" + String(fram.read32(24000)) + "&Channel16=" + String(fram.read32(25000));
-    http.get("/VENTIL API ADRESS");
-    //int statusCode = http.responseStatusCode();
-    String response = http.responseBody();
-    //Serial.println("Status code: " + statusCode);
-    Serial.println("Response: " + response);
-    Serial.println("");
-  
-    http.stop();
+    String serverPath = "https://oms.ventil.nl/api/MachinePartOperations?HBBoxNumber=" + String(fram.read32(500)) + "&Channel=1";
+    //https://oms.ventil.nl/api/MachinePartOperations?HBBoxNumber= + String(fram.read32(500)) + "&Channel1=" + String(fram.read32(10000)) + "&Channel2=" + String(fram.read32(11000)) + "&Channel3=" + String(fram.read32(12000)) + "&Channel4=" + String(fram.read32(13000));
+    // API adress will need to be changed. Current path is only for testing purposes.
+
+    http.begin(serverPath.c_str());
+    http.GET();
+    if (http.getString() == "1") Serial.println(F("API request success"));
+    else Serial.println(F("API request failed"));
+    // option to add more actions by adding "if (http.getString() == "{responsecode}") {responsecode action}"
+
+    http.end();
     Serial.println(F("Server disconnected"));
     modem.gprsDisconnect();
     Serial.println(F("GPRS disconnected"));

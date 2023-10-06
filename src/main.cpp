@@ -22,8 +22,6 @@ const char gprsUser[] = "";
 const char gprsPass[] = "";
 const char simPIN[]   = "0000"; 
 
-const char server[]   = "oms.ventil.nl";
-const int  port       = 8081;
 const int  machinenr  = 1;
 
 static const unsigned long REFRESH_INTERVAL = 10000;
