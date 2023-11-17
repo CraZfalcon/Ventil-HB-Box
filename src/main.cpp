@@ -170,9 +170,6 @@ void sendpulseStringSecureV2(){
   Serial.println(F("\nGPRS disconnected"));
 }
 
-
-
-
 void loop() {
   if(millis() - lastRefreshTime >= REFRESH_INTERVAL) {
     lastRefreshTime += REFRESH_INTERVAL;
