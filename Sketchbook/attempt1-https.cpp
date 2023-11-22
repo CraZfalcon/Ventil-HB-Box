@@ -15,10 +15,7 @@ Button2 button1, button2, button3, button4;
 #include <Wire.h>
 #include <Ticker.h>
 #include <WiFi.h>
-//#include <WifiClientSecure.h>
-//#include <HTTPClient.h>
-#include <SSLClient.h>
-#include <ArduinoHttpClient.h>
+#include <WifiClientSecure.h>
 
 const char apn[]      = "chili";
 const char gprsUser[] = "";
@@ -31,7 +28,7 @@ const int  machinenr  = 1;
 static const unsigned long REFRESH_INTERVAL = 10000;
 static unsigned long lastRefreshTime = 0;
 
-const char ssl_cert[] PROGMEM =
+const char* ssl_cert =
 "-----BEGIN CERTIFICATE-----\n" \
 "MIIF3jCCA8agAwIBAgIQAf1tMPyjylGoG7xkDjUDLTANBgkqhkiG9w0BAQwFADCB\n" \
 "iDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCk5ldyBKZXJzZXkxFDASBgNVBAcTC0pl\n" \
@@ -74,16 +71,7 @@ FRAM fram(&I2CFRAM);
 
 #define SerialAT Serial1
 TinyGsm modem(SerialAT);
-TinyGsmClient client(modem);
-SSLClient secure_layer(&client);
-HttpClient https = HttpClient(secure_layer, server, 8081);
-
-
-//WiFiClientSecure client;
-//WiFiClientSecure *client = new WiFiClientSecure;
-
-//TinyGsm modem(SerialAT);
-//HTTPClient https;
+WiFiClientSecure client;
 
 
 bool setPowerBoostKeepOn(int en){
@@ -104,9 +92,6 @@ void pressed(Button2& btn) {
 void setup() {
   Serial.begin(115200);
 
-  secure_layer.setCACert(ssl_cert);
-  //client.setCACert(ssl_cert);
-
   // Start I2C communication (SDA, SCL, Frequency)
   I2CModem.begin(21, 22, 400000);
   I2CFRAM.begin(16, 17, 100000);
@@ -118,6 +103,7 @@ void setup() {
   delay(1000);
   digitalWrite(4, HIGH);
 
+  client.setCACert(ssl_cert);
 
   // Set GSM module baud rate and UART pins
   SerialAT.begin(115200, SERIAL_8N1, 26, 27);
@@ -136,9 +122,9 @@ void setup() {
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
   Serial.println("Initializing modem...");
-  //modem.restart();
-  modem.init();
-  //esp_netif_init();
+  modem.restart();
+  // modem.init();
+  esp_netif_init();
 
   // Unlock your SIM card with a PIN if needed
   if (strlen(simPIN) && modem.getSimStatus() != 3 ) { modem.simUnlock(simPIN); }
@@ -147,14 +133,14 @@ void setup() {
 
 }
 
-/*void sendpulseStringSecure(){
+void sendpulseStringSecure(){
   if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
     Serial.println("Failed to connect to GPRS network");
   }
   else {
     Serial.println("\nSuccessfully connected to GPRS network");
     Serial.println("\nStarting connection to server...");
-    if (!client.connect(server, 8081))
+    if (client.connect(server, 8081))
       Serial.println("Connection failed!");
     else {
       Serial.println("Connected to server!");
@@ -183,60 +169,6 @@ void setup() {
   }
   modem.gprsDisconnect();
   Serial.println(F("\nGPRS disconnected"));
-}*/
-
-/*void sendpulseStringSecureV2(){
-  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-    Serial.println("Failed to connect to GPRS network");
-  }
-  else {
-    Serial.println("\nSuccessfully connected to GPRS network");
-    Serial.println("\nStarting connection to server...");
-   
-    //function
-
-    if(https.begin(*client, "https://oms.ventil.nl:8081/api/MachinePartOperations?HBBoxNumber=1&Channel=1")) {
-      Serial.println("Connected to server!");
-      // Make a HTTP request:
-      int httpCode = https.GET();
-      if(httpCode > 0) {
-        // HTTP header has been send and Server response header has been handled
-        Serial.printf("[HTTPS] GET... code: %d\n", httpCode);
-        // file found at server
-        if(httpCode == HTTP_CODE_OK) {
-          String payload = https.getString();
-          Serial.println(payload);
-        }
-      }
-      else {
-        Serial.printf("[HTTPS] GET... failed, error: %s\n", https.errorToString(httpCode).c_str());
-      }
-      https.end();
-    }
-    else {  
-      Serial.printf("[HTTPS] Unable to connect\n");
-    }
-
-
-  }
-  modem.gprsDisconnect();
-  Serial.println(F("\nGPRS disconnected"));
-}*/
-
-void sendpulseStringSecure(){
-  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-    Serial.println("Failed to connect to GPRS network");
-  }
-  else {
-    Serial.println("\nSuccessfully connected to GPRS network");
-    Serial.println("\nStarting connection to server...");
-
-    https.get("https://oms.ventil.nl:8081/api/MachinePartOperations?HBBoxNumber=1&Channel=1");
-    Serial.println("response: " + https.responseBody());
-
-    modem.gprsDisconnect();
-    Serial.println(F("\nGPRS disconnected"));
-  }
 }
 
 void loop() {

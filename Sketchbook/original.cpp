@@ -452,12 +452,21 @@ SerialMon.println("Performing HTTP POST request...");
  //                            + "&value14=" + String(sensor_13) + "&value15=" + String(sensor_14) + "&value16=" + String(sensor_15)
 //                             + "&value17=" + String(sensor_16) + "";
 
-String httpRequestData = "api_key=" + apiKeyValue + "&value1=" + String(machinenr)
-                             + "&value2=" + String(sensor_1) + "&value3=" + String(sensor_2) + "&value4=" + String(sensor_3)
-                             + "&value5=" + String(sensor_4) + "&value6=" + String(sensor_5) + "&value7=" + String(sensor_6)
-                             + "&value8=" + String(sensor_7) + "&value9=" + String(sensor_8) + "&value10=" + String(sensor_9)
-                             + "&value11=" + String(sensor_10) + "&value12=" + String(sensor_11) + "&value13=" + String(sensor_12)
-                             + "&value14=" + String(sensor_13) + "";
+String httpRequestData = "api_key=" + apiKeyValue 
+                       + "&value1=" + String(machinenr)
+                       + "&value2=" + String(sensor_1)
+                       + "&value3=" + String(sensor_2)
+                       + "&value4=" + String(sensor_3)
+                       + "&value5=" + String(sensor_4)
+                       + "&value6=" + String(sensor_5)
+                       + "&value7=" + String(sensor_6)
+                       + "&value8=" + String(sensor_7)
+                       + "&value9=" + String(sensor_8)
+                       + "&value10=" + String(sensor_9)
+                       + "&value11=" + String(sensor_10)
+                       + "&value12=" + String(sensor_11)
+                       + "&value13=" + String(sensor_12)
+                       + "&value14=" + String(sensor_13) + "";
 client.print(String("POST ") + resource + " HTTP/1.1\r\n");
 client.print(String("Host: ") + server + "\r\n");
 client.println("Connection: close");
