@@ -17,6 +17,7 @@
 #define BUTTON_16_PIN  15
 Button2 button1, button2, button3, button4, button5, button6, button7, button8, button9, button10, button11, button12, button13, button14, button15, button16;
 
+
 #define TINY_GSM_MODEM_SIM7000
 #define TINY_GSM_RX_BUFFER 1024 // Set RX buffer to 1Kb
 #define GSM_PIN "0000"
@@ -26,55 +27,18 @@ Button2 button1, button2, button3, button4, button5, button6, button7, button8, 
 #include <SPI.h>
 #include <Wire.h>
 #include <Ticker.h>
-#include <SSLClient.h>
-#include <ArduinoHttpClient.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 
 const char apn[]      = "chili";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 const char simPIN[]   = "0000"; 
-const char server[]    = "oms.ventil.nl";
 
 const int  machinenr  = 1;
 
 static const unsigned long REFRESH_INTERVAL = 10000;
 static unsigned long lastRefreshTime = 0;
-
-const char ssl_cert[] PROGMEM =
-"-----BEGIN CERTIFICATE-----\n" \
-"MIIF3jCCA8agAwIBAgIQAf1tMPyjylGoG7xkDjUDLTANBgkqhkiG9w0BAQwFADCB\n" \
-"iDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCk5ldyBKZXJzZXkxFDASBgNVBAcTC0pl\n" \
-"cnNleSBDaXR5MR4wHAYDVQQKExVUaGUgVVNFUlRSVVNUIE5ldHdvcmsxLjAsBgNV\n" \
-"BAMTJVVTRVJUcnVzdCBSU0EgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkwHhcNMTAw\n" \
-"MjAxMDAwMDAwWhcNMzgwMTE4MjM1OTU5WjCBiDELMAkGA1UEBhMCVVMxEzARBgNV\n" \
-"BAgTCk5ldyBKZXJzZXkxFDASBgNVBAcTC0plcnNleSBDaXR5MR4wHAYDVQQKExVU\n" \
-"aGUgVVNFUlRSVVNUIE5ldHdvcmsxLjAsBgNVBAMTJVVTRVJUcnVzdCBSU0EgQ2Vy\n" \
-"dGlmaWNhdGlvbiBBdXRob3JpdHkwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIK\n" \
-"AoICAQCAEmUXNg7D2wiz0KxXDXbtzSfTTK1Qg2HiqiBNCS1kCdzOiZ/MPans9s/B\n" \
-"3PHTsdZ7NygRK0faOca8Ohm0X6a9fZ2jY0K2dvKpOyuR+OJv0OwWIJAJPuLodMkY\n" \
-"tJHUYmTbf6MG8YgYapAiPLz+E/CHFHv25B+O1ORRxhFnRghRy4YUVD+8M/5+bJz/\n" \
-"Fp0YvVGONaanZshyZ9shZrHUm3gDwFA66Mzw3LyeTP6vBZY1H1dat//O+T23LLb2\n" \
-"VN3I5xI6Ta5MirdcmrS3ID3KfyI0rn47aGYBROcBTkZTmzNg95S+UzeQc0PzMsNT\n" \
-"79uq/nROacdrjGCT3sTHDN/hMq7MkztReJVni+49Vv4M0GkPGw/zJSZrM233bkf6\n" \
-"c0Plfg6lZrEpfDKEY1WJxA3Bk1QwGROs0303p+tdOmw1XNtB1xLaqUkL39iAigmT\n" \
-"Yo61Zs8liM2EuLE/pDkP2QKe6xJMlXzzawWpXhaDzLhn4ugTncxbgtNMs+1b/97l\n" \
-"c6wjOy0AvzVVdAlJ2ElYGn+SNuZRkg7zJn0cTRe8yexDJtC/QV9AqURE9JnnV4ee\n" \
-"UB9XVKg+/XRjL7FQZQnmWEIuQxpMtPAlR1n6BB6T1CZGSlCBst6+eLf8ZxXhyVeE\n" \
-"Hg9j1uliutZfVS7qXMYoCAQlObgOK6nyTJccBz8NUvXt7y+CDwIDAQABo0IwQDAd\n" \
-"BgNVHQ4EFgQUU3m/WqorSs9UgOHYm8Cd8rIDZsswDgYDVR0PAQH/BAQDAgEGMA8G\n" \
-"A1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQEMBQADggIBAFzUfA3P9wF9QZllDHPF\n" \
-"Up/L+M+ZBn8b2kMVn54CVVeWFPFSPCeHlCjtHzoBN6J2/FNQwISbxmtOuowhT6KO\n" \
-"VWKR82kV2LyI48SqC/3vqOlLVSoGIG1VeCkZ7l8wXEskEVX/JJpuXior7gtNn3/3\n" \
-"ATiUFJVDBwn7YKnuHKsSjKCaXqeYalltiz8I+8jRRa8YFWSQEg9zKC7F4iRO/Fjs\n" \
-"8PRF/iKz6y+O0tlFYQXBl2+odnKPi4w2r78NBc5xjeambx9spnFixdjQg3IM8WcR\n" \
-"iQycE0xyNN+81XHfqnHd4blsjDwSXWXavVcStkNr/+XeTWYRUc+ZruwXtuhxkYze\n" \
-"Sf7dNXGiFSeUHM9h4ya7b6NnJSFd5t0dCy5oGzuCr+yDZ4XUmFF0sbmZgIn/f3gZ\n" \
-"XHlKYC6SQK5MNyosycdiyA5d9zZbyuAlJQG03RoHnHcAP9Dc1ew91Pq7P8yF1m9/\n" \
-"qS3fuQL39ZeatTXaw2ewh0qpKJ4jjv9cJ2vhsE/zB+4ALtRZh8tSQZXq9EfX7mRB\n" \
-"VXyNWQKV3WKdwrnuWih0hKWbt5DHDAff9Yk2dDLWKMGwsAvgnEzDHNb842m1R0aB\n" \
-"L6KCq9NjRHDEjf8tM7qtj3u1cIiuPhnPQCjY/MiQu12ZIvVS5ljFH4gxQ+6IHdfG\n" \
-"jjxDah2nGN59PRbxYvnKkKj9\n" \
-"-----END CERTIFICATE-----\n";
 
 // I2C for SIM7000G(0) & FRAM(1) (to keep it running when powered from battery)
 TwoWire I2CModem = TwoWire(0);
@@ -83,9 +47,8 @@ FRAM fram(&I2CFRAM);
 
 #define SerialAT Serial1
 TinyGsm modem(SerialAT);
-TinyGsmClient sslclient(modem);
-SSLClient secure_layer(&sslclient);
-HttpClient https = HttpClient(secure_layer, server, 8081);
+TinyGsmClient client(modem);
+HTTPClient http;
 
 
 bool setPowerBoostKeepOn(int en){
@@ -117,9 +80,6 @@ void pressed(Button2& btn) {
 
 void setup() {
   Serial.begin(115200);
-
-  secure_layer.setCACert(ssl_cert);
-
   // Start I2C communication (SDA, SCL, Frequency)
   I2CModem.begin(21, 22, 400000);
   I2CFRAM.begin(16, 17, 100000);
@@ -172,8 +132,8 @@ void setup() {
   // Restart takes quite some time
   // To skip it, call init() instead of restart()
   Serial.println("Initializing modem...");
-  //modem.restart();
-  modem.init();
+  modem.restart();
+  // modem.init();
 
   // Unlock your SIM card with a PIN if needed
   if (strlen(simPIN) && modem.getSimStatus() != 3 ) { modem.simUnlock(simPIN); }
@@ -181,15 +141,14 @@ void setup() {
   Serial.println(int(fram.begin(0x50)), HEX);
 }
 
-void sendpulseStringSecure(){
+void sendpulseString() {
+  Serial.println("Connecting to APN: " + String(apn));
   if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
     Serial.println("Failed to connect to GPRS network");
   }
   else {
-    Serial.println("\n\n\nSuccessfully connected to GPRS network");
-    Serial.println("Starting connection to server...");
 
-    https.get("/api/MachinePartOperations?"
+    String serverPath = "/api/MachinePartOperations?"
     "HBBoxNumber="  + String(fram.read32(500))
     + "&Channel1="  + String(fram.read32(10000))
     + "&Channel2="  + String(fram.read32(11000))
@@ -206,22 +165,29 @@ void sendpulseStringSecure(){
     + "&Channel13=" + String(fram.read32(22000))
     + "&Channel14=" + String(fram.read32(23000))
     + "&Channel15=" + String(fram.read32(24000))
-    + "&Channel16=" + String(fram.read32(25000)));
+    + "&Channel16=" + String(fram.read32(25000));
 
-    Serial.println("\nresponse: " + https.responseBody() + "\n");
+    String serverPath = "https://oms.ventil.nl/api/MachinePartOperations?HBBoxNumber=" + String(fram.read32(500)) + "&Channel=1";
+    //https://oms.ventil.nl/api/MachinePartOperations?HBBoxNumber= + String(fram.read32(500)) + "&Channel1=" + String(fram.read32(10000)) + "&Channel2=" + String(fram.read32(11000)) + "&Channel3=" + String(fram.read32(12000)) + "&Channel4=" + String(fram.read32(13000));
+    // API adress will need to be changed. Current path is only for testing purposes.
 
-    https.stop();
-    Serial.println("Disconnected from server");
+    http.begin(serverPath.c_str());
+    http.GET();
+    if (http.getString() == "1") Serial.println(F("API request success"));
+    else Serial.println(F("API request failed"));
+    // option to add more actions by adding "if (http.getString() == "{responsecode}") {responsecode action}"
+
+    http.end();
+    Serial.println(F("Server disconnected"));
     modem.gprsDisconnect();
     Serial.println(F("GPRS disconnected"));
   }
-
 }
 
 void loop() {
   if(millis() - lastRefreshTime >= REFRESH_INTERVAL) {
     lastRefreshTime += REFRESH_INTERVAL;
-    sendpulseStringSecure();
+    sendpulseString();
   }
   button1.loop();
   button2.loop();
