@@ -18,7 +18,8 @@
 Button2 button1, button2, button3, button4, button5, button6, button7, button8, button9, button10, button11, button12, button13, button14, button15, button16;
 
 #define USE_VENTIL_SSL
-//#define TEST //Uncomment to test with test API
+//#define LOCATION_ENABLED // Uncomment to enable GPS location
+#define TEST //Uncomment to test with test API
 //#define DEBUG //Uncomment to see raw response code and body
 
 #define TINY_GSM_MODEM_SIM7000
@@ -32,16 +33,18 @@ Button2 button1, button2, button3, button4, button5, button6, button7, button8, 
 #include <ArduinoHttpClient.h>
 #include <ssl_cert.h>
 
+const int  machinenr  = 1;
 const char apn[]      = "chili";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 const char simPIN[]   = "0000"; 
 const char server[]    = "oms.ventil.nl";
 
-const int  machinenr  = 1;
+// Location variables for GPS & API response global variable
+float lat = 0, lon = 0;
 String  responseCode = "";
 
-static const unsigned long REFRESH_INTERVAL = 100000;
+static unsigned long REFRESH_INTERVAL = 10000;
 static unsigned long lastRefreshTime = 0;
 
 // I2C for SIM7000G(0) & FRAM(1) (to keep it running when powered from battery)
@@ -84,6 +87,8 @@ void pressed(Button2& btn) {
 }
 
 void setup() {
+  //REFRESH_INTERVAL = REFRESH_INTERVAL * 60 * 60 * 1000; // Convert miliseconds to hours
+
   Serial.begin(115200);
 
   secure_layer.setCACert(ssl_cert);
@@ -143,12 +148,14 @@ void setup() {
   Serial.println("Initializing modem...");
   modem.restart();
   //modem.init();
+  #ifdef LOCATION_ENABLED
+    modem.enableGPS();
+  #endif
 
   // Unlock your SIM card with a PIN if needed
   if (strlen(simPIN) && modem.getSimStatus() != 3 ) { modem.simUnlock(simPIN); }
 
   Serial.println(int(fram.begin(0x50)), HEX);
-
 }
 
 void sendpulseStringSecure(){
@@ -158,6 +165,10 @@ void sendpulseStringSecure(){
   else {
     Serial.println("\n\n\nSuccessfully connected to GPRS network");
     Serial.println("Starting connection to server...");
+
+    #ifdef LOCATION_ENABLED
+      if(!modem.getGPS(&lat, &lon)){lat = 0; lon = 0;}
+    #endif
 
     #ifndef TEST
       https.get("/api/MachinePartOperations?"
@@ -177,7 +188,12 @@ void sendpulseStringSecure(){
       + "&Channel13=" + String(fram.read32(22000))
       + "&Channel14=" + String(fram.read32(23000))
       + "&Channel15=" + String(fram.read32(24000))
-      + "&Channel16=" + String(fram.read32(25000)));
+      + "&Channel16=" + String(fram.read32(25000))
+      #ifdef LOCATION_ENABLED
+        + "&Latitude="  + String(lat, 7)
+        + "&Longitude=" + String(lon, 7)
+      #endif    
+      );
 
       responseCode = "NULL";
       responseCode = https.responseBody();
@@ -194,8 +210,34 @@ void sendpulseStringSecure(){
     #ifdef TEST
       https.get("/api/MachinePartOperations?HBBoxNumber=1&Channel=1");
       if (https.responseBody() = "1") Serial.println("\n\n\nSuccessfully connected to server");
+      #ifdef LOCATION_ENABLED
+      Serial.println(String(lat, 7) + ", " + String(lon, 7));
+      #endif
     #endif
     #ifdef DEBUG
+      Serial.println("\n\n\n/api/MachinePartOperations?"
+      "HBBoxNumber="  + String(fram.read32(500))
+      + "&Channel1="  + String(fram.read32(10000))
+      + "&Channel2="  + String(fram.read32(11000))
+      + "&Channel3="  + String(fram.read32(12000))
+      + "&Channel4="  + String(fram.read32(13000))
+      + "&Channel5="  + String(fram.read32(14000))
+      + "&Channel6="  + String(fram.read32(15000))
+      + "&Channel7="  + String(fram.read32(16000))
+      + "&Channel8="  + String(fram.read32(17000))
+      + "&Channel9="  + String(fram.read32(18000))
+      + "&Channel10=" + String(fram.read32(19000))
+      + "&Channel11=" + String(fram.read32(20000))
+      + "&Channel12=" + String(fram.read32(21000))
+      + "&Channel13=" + String(fram.read32(22000))
+      + "&Channel14=" + String(fram.read32(23000))
+      + "&Channel15=" + String(fram.read32(24000))
+      + "&Channel16=" + String(fram.read32(25000))
+      #ifdef LOCATION_ENABLED
+        + "&Latitude="  + String(lat, 7)
+        + "&Longitude=" + String(lon, 7)
+      #endif    
+      );
       Serial.println("\nresponse code: " + https.responseStatusCode());
       Serial.println("response body: " + https.responseBody() + "\n");
     #endif
