@@ -121,8 +121,8 @@ void setup() {
   button5.setPressedHandler(pressed);
   button6.begin(BUTTON_6_PIN);
   button6.setPressedHandler(pressed);
-  button7.begin(BUTTON_7_PIN);
-  button7.setPressedHandler(pressed);
+  // button7.begin(BUTTON_7_PIN);
+  // button7.setPressedHandler(pressed);
   button8.begin(BUTTON_8_PIN);
   button8.setPressedHandler(pressed);
   button9.begin(BUTTON_9_PIN);
@@ -209,10 +209,11 @@ void sendpulseStringSecure(){
     #endif
     #ifdef TEST
       https.get("/api/MachinePartOperations?HBBoxNumber=1&Channel=1");
-      if (https.responseBody() = "1") Serial.println("\n\n\nSuccessfully connected to server");
+      if (https.responseBody() = "1") Serial.println("Successfully connected to server\n\n");
       #ifdef LOCATION_ENABLED
       Serial.println(String(lat, 7) + ", " + String(lon, 7));
       #endif
+    lastRefreshTime += REFRESH_INTERVAL;
     #endif
     #ifdef DEBUG
       Serial.println("\n\n\n/api/MachinePartOperations?"
@@ -258,7 +259,7 @@ void sendpulseStringSecure(){
     else if (responseCode = "number / response code") { /*function*/ }
     else { Serial.println("Responsecode not recognized"); } // This should never happen, but is here just in case
   #endif
-  
+
 }
 
 void loop() {
@@ -271,7 +272,7 @@ void loop() {
   button4.loop();
   button5.loop();
   button6.loop();
-  button7.loop();
+  // button7.loop();
   button8.loop();
   button9.loop();
   button10.loop();
