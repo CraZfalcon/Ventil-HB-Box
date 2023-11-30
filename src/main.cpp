@@ -18,7 +18,7 @@
 Button2 button1, button2, button3, button4, button5, button6, button7, button8, button9, button10, button11, button12, button13, button14, button15, button16;
 
 #define USE_VENTIL_SSL
-//#define LOCATION_ENABLED // Uncomment to enable GPS location
+#define LOCATION_ENABLED // Uncomment to enable GPS location
 #define TEST //Uncomment to test with test API
 //#define DEBUG //Uncomment to see raw response code and body
 
@@ -148,14 +148,38 @@ void setup() {
   Serial.println("Initializing modem...");
   modem.restart();
   //modem.init();
-  #ifdef LOCATION_ENABLED
-    modem.enableGPS();
-  #endif
 
   // Unlock your SIM card with a PIN if needed
   if (strlen(simPIN) && modem.getSimStatus() != 3 ) { modem.simUnlock(simPIN); }
 
   Serial.println(int(fram.begin(0x50)), HEX);
+}
+
+void getGPSLocation(){
+  modem.sendAT("+SGPIO=0,4,1,1");
+  if (modem.waitResponse(10000L) != 1) {
+    Serial.println("SGPIO=0,4,1,1 false");
+  } else Serial.println("SGPIO=0,4,1,1 true");
+  modem.enableGPS();
+  delay(15000);
+  if (modem.getGPS(&lat, &lon)) {
+    Serial.println(String(lat, 7) + ", " + String(lon, 7));
+  } else {
+    Serial.println("Failed to get GPS location");
+  }
+  
+  Serial.println("GPS raw: " + modem.getGPSraw());
+
+  #ifdef DEBUG
+    Serial.println("GPS raw: " + modem.getGPSraw());
+  #endif
+
+  modem.sendAT("+SGPIO=0,4,1,0");
+  if (modem.waitResponse(10000L) != 1) {
+    Serial.println("SGPIO=0,4,1,0 false");
+  } else Serial.println("SGPIO=0,4,1,0 true");
+  modem.disableGPS();
+
 }
 
 void sendpulseStringSecure(){
@@ -167,7 +191,7 @@ void sendpulseStringSecure(){
     Serial.println("Starting connection to server...");
 
     #ifdef LOCATION_ENABLED
-      if(!modem.getGPS(&lat, &lon)){lat = 0; lon = 0;}
+      getGPSLocation();
     #endif
 
     #ifndef TEST
