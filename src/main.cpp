@@ -228,8 +228,12 @@ void sendpulseStringSecure(){
 
     #endif
     #ifdef TEST
-      https.get("/api/MachinePartOperations?HBBoxNumber=1&Channel=1");
-      if (https.responseBody() = "1") Serial.println("Successfully connected to server\n\n");
+      https.get("/api/MachinePartOperations?HBBoxNumber=1"
+      "&Channel1=1&Channel2=1&Channel3=1&Channel4=1&Channel5=1&Channel6=1"
+      "&Channel7=1&Channel8=1&Channel9=1&Channel10=1&Channel11=1&Channel12=1"
+      "&Channel13=1&Channel14=1&Channel15=1&Channel16=1&Latitude=1&Longitude=1");
+
+      if (https.responseBody() = "1") Serial.println("Successfully connected to server, response:" + String(https.responseBody()) + "\n\n");
       #ifdef LOCATION_ENABLED
       Serial.println(String(lat, 7) + ", " + String(lon, 7));
       #endif
