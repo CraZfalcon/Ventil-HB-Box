@@ -161,17 +161,13 @@ void getGPSLocation(){
     Serial.println("SGPIO=0,4,1,1 false");
   } else Serial.println("SGPIO=0,4,1,1 true");
   modem.enableGPS();
-  delay(15000);
-  if (modem.getGPS(&lat, &lon)) {
-    Serial.println(String(lat, 7) + ", " + String(lon, 7));
-  } else {
-    Serial.println("Failed to get GPS location");
-  }
-  
-  Serial.println("GPS raw: " + modem.getGPSraw());
 
+  if(modem.getGsmLocation(&lon, &lat)) {
+    Serial.println(String(lat, 7) + ", " + String(lon, 7));
+  } else Serial.println("Failed to get GSM location");
+  
   #ifdef DEBUG
-    Serial.println("GPS raw: " + modem.getGPSraw());
+    Serial.println("GPS raw: " + modem.getGsmLocationRaw());
   #endif
 
   modem.sendAT("+SGPIO=0,4,1,0");
