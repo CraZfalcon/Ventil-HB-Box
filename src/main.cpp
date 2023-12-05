@@ -225,12 +225,36 @@ void sendpulseStringSecure(){
 
     #endif
     #ifdef TEST
-      https.get("/api/MachinePartOperations?HBBoxNumber=1"
+      /*https.get("/api/MachinePartOperations?HBBoxNumber=1"
       "&Channel1=1&Channel2=1&Channel3=1&Channel4=1&Channel5=1&Channel6=1"
       "&Channel7=1&Channel8=1&Channel9=1&Channel10=1&Channel11=1&Channel12=1"
-      "&Channel13=1&Channel14=1&Channel15=1&Channel16=1&Latitude=1&Longitude=1");
+      "&Channel13=1&Channel14=1&Channel15=1&Channel16=1&Latitude=1&Longitude=1");*/
 
-      if (https.responseBody() = "1") Serial.println("Successfully connected to server, response:" + String(https.responseBody()) + "\n\n");
+      https.get("/api/MachinePartOperations?"
+      "HBBoxNumber="  + String(fram.read32(500))
+      + "&Channel1="  + String(fram.read32(10000))
+      + "&Channel2="  + String(fram.read32(11000))
+      + "&Channel3="  + String(fram.read32(12000))
+      + "&Channel4="  + String(fram.read32(13000))
+      + "&Channel5="  + String(fram.read32(14000))
+      + "&Channel6="  + String(fram.read32(15000))
+      + "&Channel7="  + String(fram.read32(16000))
+      + "&Channel8="  + String(fram.read32(17000))
+      + "&Channel9="  + String(fram.read32(18000))
+      + "&Channel10=" + String(fram.read32(19000))
+      + "&Channel11=" + String(fram.read32(20000))
+      + "&Channel12=" + String(fram.read32(21000))
+      + "&Channel13=" + String(fram.read32(22000))
+      + "&Channel14=" + String(fram.read32(23000))
+      + "&Channel15=" + String(fram.read32(24000))
+      + "&Channel16=" + String(fram.read32(25000))
+      #ifdef LOCATION_ENABLED
+        + "&Latitude="  + String(lat, 7)
+        + "&Longitude=" + String(lon, 7)
+      #endif    
+      );
+
+      if (https.responseBody()) Serial.println("Successfully connected to server, response:" + String(https.responseBody()) + "\n\n");
 
       Serial.println("Raw request: https://oms.ventil.nl:8081/api/MachinePartOperations?"
       "HBBoxNumber="  + String(fram.read32(500))
