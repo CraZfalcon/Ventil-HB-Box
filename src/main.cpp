@@ -17,10 +17,9 @@
 #define BUTTON_16_PIN  15
 Button2 button1, button2, button3, button4, button5, button6, button7, button8, button9, button10, button11, button12, button13, button14, button15, button16;
 
-#define USE_VENTIL_SSL
+#define USE_VENTIL_SSL // Uses Ventil SSL certificate for oms.ventil.nl 
 #define LOCATION_ENABLED // Uncomment to enable GPS location
 #define TEST //Uncomment to test with test API
-//#define DEBUG //Uncomment to see raw response code and body
 
 #define TINY_GSM_MODEM_SIM7000
 #define TINY_GSM_RX_BUFFER 1024 // Set RX buffer to 1Kb
@@ -163,13 +162,11 @@ void getGPSLocation(){
   modem.enableGPS();
 
   if(modem.getGsmLocation(&lon, &lat)) {
+    Serial.println("GPS raw: " + modem.getGsmLocationRaw());
+    Serial.println("Latitude, Longitude");
     Serial.println(String(lat, 7) + ", " + String(lon, 7));
   } else Serial.println("Failed to get GSM location");
   
-  #ifdef DEBUG
-    Serial.println("GPS raw: " + modem.getGsmLocationRaw());
-  #endif
-
   modem.sendAT("+SGPIO=0,4,1,0");
   if (modem.waitResponse(10000L) != 1) {
     Serial.println("SGPIO=0,4,1,0 false");
@@ -180,7 +177,7 @@ void getGPSLocation(){
 
 void sendpulseStringSecure(){
   if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-    Serial.println("Failed to connect to GPRS network");
+    Serial.println("\n\n\nFailed to connect to GPRS network");
   }
   else {
     Serial.println("\n\n\nSuccessfully connected to GPRS network");
@@ -234,13 +231,8 @@ void sendpulseStringSecure(){
       "&Channel13=1&Channel14=1&Channel15=1&Channel16=1&Latitude=1&Longitude=1");
 
       if (https.responseBody() = "1") Serial.println("Successfully connected to server, response:" + String(https.responseBody()) + "\n\n");
-      #ifdef LOCATION_ENABLED
-      Serial.println(String(lat, 7) + ", " + String(lon, 7));
-      #endif
-    lastRefreshTime += REFRESH_INTERVAL;
-    #endif
-    #ifdef DEBUG
-      Serial.println("\n\n\n/api/MachinePartOperations?"
+
+      Serial.println("Raw request: https://oms.ventil.nl:8081/api/MachinePartOperations?"
       "HBBoxNumber="  + String(fram.read32(500))
       + "&Channel1="  + String(fram.read32(10000))
       + "&Channel2="  + String(fram.read32(11000))
@@ -265,6 +257,8 @@ void sendpulseStringSecure(){
       );
       Serial.println("\nresponse code: " + https.responseStatusCode());
       Serial.println("response body: " + https.responseBody() + "\n");
+
+      lastRefreshTime += REFRESH_INTERVAL;
     #endif
 
     https.stop();
